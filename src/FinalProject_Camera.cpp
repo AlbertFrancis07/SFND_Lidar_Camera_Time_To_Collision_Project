@@ -156,11 +156,33 @@ int main(int argc, const char *argv[])
         {
             detKeypointsShiTomasi(keypoints, imgGray, false);
         }
+        else if (detectorType.compare("Harris") == 0)
+        {
+            detKeypointsHarris(keypoints, img, false);
+        }
         else
         {
-            //...
+            detKeypointsModern(keypoints ,img, detectorType,false);
         }
 
+
+        bool bFocusOnVehicle = true;
+        cv::Rect vehicleRect(535, 180, 180, 150);
+        vector<cv::KeyPoint>filteredkeypoints;
+        if (bFocusOnVehicle)
+        { 
+            
+            for(auto &kp : keypoints)
+            {
+                if(vehicleRect.contains(kp.pt))
+                {
+                    filteredkeypoints.push_back(kp);
+                }
+            }
+            cout <<"Keypoints within the Rectangle =" << filteredkeypoints.size() << endl;
+        }
+
+        
         // optional : limit number of keypoints (helpful for debugging and learning)
         bool bLimitKpts = false;
         if (bLimitKpts)

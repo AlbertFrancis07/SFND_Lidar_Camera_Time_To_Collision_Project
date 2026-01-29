@@ -49,10 +49,25 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 
         extractor = cv::BRISK::create(threshold, octaves, patternScale);
     }
-    else
+    else if (descriptorType.compare("BRIEF") == 0)
     {
-
-        //...
+         extractor = cv::xfeatures2d::BriefDescriptorExtractor::create();
+    }
+    else if (descriptorType.compare("ORB") == 0)
+    {
+         extractor = cv::ORB::create();
+    }
+    else if (descriptorType.compare("FREAK") == 0)
+    {
+         extractor =  cv::xfeatures2d::FREAK::create();
+    }
+    else if (descriptorType.compare("AKAZE") == 0)
+    {
+         extractor = cv::AKAZE::create();
+    }
+    else if (descriptorType.compare("SIFT") == 0)
+    {
+         extractor = cv::SIFT::create();
     }
 
     // perform feature description
@@ -100,5 +115,194 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
         cv::namedWindow(windowName, 6);
         imshow(windowName, visImage);
         cv::waitKey(0);
+    }
+}
+
+void detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
+{
+
+    cv::cvtColor(img, img, cv::COLOR_BGR2GRAY); // convert to grayscale
+
+    // Detector parameters
+    int blockSize = 2;     // for every pixel, a blockSize × blockSize neighborhood is considered
+    int apertureSize = 3;  // aperture parameter for Sobel operator (must be odd)
+    int minResponse = 100; // minimum value for a corner in the 8bit scaled response matrix
+    double k = 0.04;       // Harris parameter (see equation for details)
+
+    // Detect Harris corners and normalize output
+    cv::Mat dst, dst_norm, dst_norm_scaled;
+    dst = cv::Mat::zeros(img.size(), CV_32FC1);
+    //double t = (double)cv::getTickCount();
+    cv::cornerHarris(img, dst, blockSize, apertureSize, k, cv::BORDER_DEFAULT);
+    cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
+    cv::convertScaleAbs(dst_norm, dst_norm_scaled);
+
+
+    vector<cv::KeyPoint> keypoint;
+    double maxoverlap=0.0;
+    for(size_t i =0 ; i< dst_norm.rows; i++)
+    {
+        for(size_t j=0; j<dst_norm.cols;j++)
+        {
+            int response=(int)dst_norm.at<float>(i,j);
+            if(response>minResponse)
+            {
+            cv::KeyPoint kpt;
+            kpt.size=2*apertureSize;
+            kpt.response=response;
+            kpt.pt=cv::Point2f(j,i);
+
+            bool overlap=false;
+            for(auto it =keypoints.begin(); it!=keypoints.end(); it++)
+            {
+                double kptoverlap= cv::KeyPoint::overlap(kpt,*it);
+                if(kptoverlap>maxoverlap)
+                {
+                    overlap=true;
+                    if(kpt.response>(*it).response)
+                    {
+                        *it=kpt;
+                        break;
+                    }
+                }
+            }
+            if(!overlap)
+            {
+                keypoints.push_back(kpt);
+            }
+            }
+
+        }
+    }
+   // t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    //cout << "HARRIS detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
+    if(bVis)
+    {
+            // visualize results
+    string windowName="Harris Corner Detection Results";
+    cv::namedWindow(windowName ,5);
+    cv::Mat visImage= dst_norm_scaled.clone();
+    cv::drawKeypoints(dst_norm_scaled, keypoint, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    cv::imshow(windowName,visImage);
+    cv::waitKey(0);
+    }
+}
+
+
+void detKeypointsModern(std::vector<cv::KeyPoint> &keypoints, cv::Mat &img, std::string detectorType, bool bVis)
+{
+    cv::Ptr<cv::FeatureDetector>detector;
+
+    if(detectorType.compare("FAST")==0)
+    {
+        int threshold = 30;                                                              // difference between intensity of the central pixel and pixels of a circle around this pixel
+        bool bNMS = true;    
+        cv::Mat imgGray;
+        cv::cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);                                                            // perform non-maxima suppression on keypoints
+        cv::FastFeatureDetector::DetectorType type = cv::FastFeatureDetector::TYPE_9_16; // TYPE_9_16, TYPE_7_12, TYPE_5_8
+        
+        //double t = (double)cv::getTickCount();
+        cv::FAST(imgGray,keypoints,threshold,bNMS, type);
+       // t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+        //cout << "FAST detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
+        if(bVis)
+        {
+            cv::Mat visImage = img.clone();
+            cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+            string windowName = "FAST Results";
+            cv::namedWindow(windowName, 2);
+            imshow(windowName, visImage);
+            cv::waitKey(0);
+        }
+
+    }
+
+    else if(detectorType.compare("BRISK")==0)
+    {
+        cv::Mat imgGray;
+        cv::cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);  
+       // double t = (double)cv::getTickCount();      
+        detector = cv::BRISK::create();
+        detector->detect(imgGray,keypoints);
+        //t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+       // cout << "BRISK detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
+        if(bVis)
+        {
+            cv::Mat visImage = img.clone();
+            cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+            string windowName = "BRISK Results";
+            cv::namedWindow(windowName, 2);
+            imshow(windowName, visImage);
+            cv::waitKey(0);
+        }
+
+    }
+
+    else if(detectorType.compare("SIFT")==0)
+    {
+        cv::Mat imgGray;
+        cv::cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);      
+       // double t = (double)cv::getTickCount();  
+        detector = cv::SIFT::create();
+        detector->detect(imgGray,keypoints);
+       // t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+       // cout << "SIFT detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
+        if(bVis)
+        {
+            cv::Mat visImage = img.clone();
+            cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+            string windowName = "SIFT Results";
+            cv::namedWindow(windowName, 2);
+            imshow(windowName, visImage);
+            cv::waitKey(0);
+        }
+
+    }
+
+    else if(detectorType.compare("ORB")==0)
+    {
+        cv::Mat imgGray;
+        cv::cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);   
+       // double t = (double)cv::getTickCount();     
+        detector = cv::ORB::create();
+        detector->detect(imgGray,keypoints);
+       // t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+       // cout << "ORB detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
+        if(bVis)
+        {
+            cv::Mat visImage = img.clone();
+            cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+            string windowName = "ORB Results";
+            cv::namedWindow(windowName, 2);
+            imshow(windowName, visImage);
+            cv::waitKey(0);
+        }
+
+    }
+    else if(detectorType.compare("AKAZE")==0)
+    {
+        cv::Mat imgGray;
+        cv::cvtColor(img, imgGray, cv::COLOR_BGR2GRAY);     
+       // double t = (double)cv::getTickCount();   
+        detector = cv::AKAZE::create();
+        detector->detect(imgGray,keypoints);
+        //t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+        //cout << "AKAZE detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
+        if(bVis)
+        {
+            cv::Mat visImage = img.clone();
+            cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+            string windowName = "AKAZE Results";
+            cv::namedWindow(windowName, 2);
+            imshow(windowName, visImage);
+            cv::waitKey(0);
+        }
+
     }
 }
