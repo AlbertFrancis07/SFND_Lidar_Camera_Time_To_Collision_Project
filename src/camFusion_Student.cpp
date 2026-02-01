@@ -171,7 +171,7 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
     // auxiliary variables
-    double dT = (1/frameRate);        // time between two measurements in seconds
+    double dT = (1.0/frameRate);        // time between two measurements in seconds
     double laneWidth = 4.0; // assumed width of the ego lane
 
     // find closest distance to Lidar points within ego lane
@@ -198,11 +198,21 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
         }
         
     }
+    if(XCurr.empty()||XPrev.empty())
+    {   
+        TTC = NAN;
+        return;
+    }
      double xprevmedian=median(XPrev);
      double xcurrmedian=median(XCurr);
 
     // compute TTC from both measurements
     //TTC = minXCurr * dT / (minXPrev - minXCurr); 
+    if(xprevmedian==xcurrmedian)
+    {   
+        TTC = NAN;
+        return;
+    }
     TTC = xcurrmedian*dT/(xprevmedian-xcurrmedian);   
 }
 
