@@ -149,15 +149,111 @@ void computeTTCCamera(std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPo
     // ...
 }
 
+double median(std::vector<double>&min)
+{
+    std::sort(min.begin(),min.end());
+
+    size_t n = min.size();
+    double med;
+
+    if(n%2!=0)
+    {
+        med=min[n/2];
+    }
+    else
+    {
+        med=(min[n/2-1]+min[n/2])/2;
+    }
+return med;
+}
 
 void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
                      std::vector<LidarPoint> &lidarPointsCurr, double frameRate, double &TTC)
 {
-    // ...
+    // auxiliary variables
+    double dT = (1/frameRate);        // time between two measurements in seconds
+    double laneWidth = 4.0; // assumed width of the ego lane
+
+    // find closest distance to Lidar points within ego lane
+    //double minXPrev = 1e9, minXCurr = 1e9;
+    std::vector<double>XPrev , XCurr;
+    for (auto it = lidarPointsPrev.begin(); it != lidarPointsPrev.end(); ++it)
+    {
+        if(abs(it->y) <= laneWidth/2.0)
+        {
+           // minXPrev = minXPrev > it->x ? it->x : minXPrev;
+            XPrev.push_back(it->x);
+           
+        }
+        
+    }
+
+    for (auto it = lidarPointsCurr.begin(); it != lidarPointsCurr.end(); ++it)
+    {
+        if(abs(it->y) <= laneWidth/2.0)
+        {
+            //minXCurr = minXCurr > it->x ? it->x : minXCurr;
+            XCurr.push_back(it->x);
+
+        }
+        
+    }
+     double xprevmedian=median(XPrev);
+     double xcurrmedian=median(XCurr);
+
+    // compute TTC from both measurements
+    //TTC = minXCurr * dT / (minXPrev - minXCurr); 
+    TTC = xcurrmedian*dT/(xprevmedian-xcurrmedian);   
 }
 
 
 void matchBoundingBoxes(std::vector<cv::DMatch> &matches, std::map<int, int> &bbBestMatches, DataFrame &prevFrame, DataFrame &currFrame)
 {
-    // ...
+    std::multimap<int,int> bbmatches;
+    const cv::Keypoint &keyprev = prevFrame.keypoints[matches.trainIdx];
+    const cv::Keypoint &keycurr = currFrame.keypoints[matches.queryIdx];
+        for(auto it1=matches.begin();it1!=matches.end();it1++)
+        {
+            for(auto it2=prevFrame.boundingBoxes.begin(); it2!=prevFrame.boundingBoxes.end();it2++)
+            {
+                if(it2->roi.contain(keyprev))
+                {
+                    for(auto it3 = currFrame.boundingBoxes.begin(); it3!=currFrame.boundingBoxes.end();it3++)
+                    {
+                        if(it3->roi.contain(keycurr))
+                        {
+                            bbmatches.insert(it3.boxID, it2.boxID);
+                        }
+                    }
+                }
+            }
+        }
+
+        for(auto it4=prevFrame.boundingBoxes.begin(); it4!=prevFrame.boundingBoxes.end();it4++)
+        {
+            std::map<int, int> currcount = 0;
+            auto range = bbmatches.equal_range(it4->boxID);
+            for(auto it5 = range.first; it5!=range.second; it5++)
+            {
+                currcount[it5->second]++;
+            }
+            int bestmatchboxID=-1;
+            int maxcount=0;
+
+            for(auto &it6 : currcount)
+            {
+                if(it6.second>maxcount)
+                {
+                    bestmatchboxID = it6.first;
+                    maxcount=it6.second;
+                }
+            }
+
+            if(bestmatchboxID!=-1)
+            {
+                bbBestMatches[it4->boxID]=bestmatchboxID;
+            }
+
+        }
+        
 }
