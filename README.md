@@ -39,8 +39,122 @@ Summary:
 This function ensures that each bounding box in the previous frame is associated with the most likely corresponding bounding box in the current frame based on keypoint overlap. It is implemented fully in matchBoundingBoxes.cpp in the matchBoundingBoxes function.
 
 
+FP.2)TTC Computation from LiDAR
 
+The computeTTCLidar function calculates the Time-to-Collision (TTC) using LiDAR points from consecutive frames.
 
+Steps and implementation:
+
+1)Filter LiDAR points within the ego lane
+
+Where: Loops over lidarPointsPrev and lidarPointsCurr
+
+What it does: Only considers points with lateral distance y within half the lane width (laneWidth/2) to focus on objects in the ego lane. Valid points are stored in vectors XPrev and XCurr.
+
+2)Handle empty point clouds
+
+Where: if(XCurr.empty() || XPrev.empty())
+
+What it does: If no points are left after filtering, TTC cannot be computed, so it is set to NaN.
+
+3)Compute the median distance
+
+Where: xprevmedian = median(XPrev) and xcurrmedian = median(XCurr)
+
+What it does: Computes the median of longitudinal distances (x) to reduce the effect of outliers or isolated points.
+
+4)Check for identical distances
+
+Where: if(xprevmedian == xcurrmedian)
+
+What it does: If the median distances in consecutive frames are equal, the relative speed is zero, so TTC is undefined and set to NaN.
+
+5)Compute TTC
+
+Where: TTC = xcurrmedian * dT / (xprevmedian - xcurrmedian)
+
+What it does: Uses the median distances and frame rate (dT = 1/frameRate) to calculate the time remaining before collision under constant velocity assumption.
+
+Summary:
+This function provides a robust TTC estimate by focusing on points in the ego lane, using median filtering to reduce outlier influence, and handling edge cases where TTC cannot be computed. The entire computation is implemented in the computeTTCLidar function.
+
+FP.3)Keypoint Association with Bounding Box
+
+The clusterKptMatchesWithROI function associates a given bounding box with the keypoint matches that lie inside it, and filters out outliers based on descriptor distance.
+
+Steps and implementation:
+
+1)Iterate over keypoint matches
+
+Where: for(auto it1 = kptMatches.begin(); it1 != kptMatches.end(); it1++)
+
+What it does: For each match in kptMatches, the corresponding keypoints in the previous (kptsPrev) and current (kptsCurr) frames are retrieved (kptprev and kptcurr).
+
+2)Check if keypoints lie within the bounding box
+
+Where: if(boundingBox.roi.contains(kptprev.pt) && boundingBox.roi.contains(kptcurr.pt))
+
+What it does: Only matches where both keypoints are inside the bounding box ROI are considered valid. These matches are added to boundingBox.kptMatches, and their descriptor distances are stored in distances.
+
+3)Handle empty matches
+
+Where: if(distances.empty()) return;
+
+What it does: If no keypoints were found inside the bounding box, the function exits early.
+
+4)Compute mean descriptor distance
+
+Where: Sum all values in distances and divide by distances.size()
+
+What it does: Calculates the average descriptor distance of the matches to identify potential outliers.
+
+5)Filter matches by distance
+
+Where: for(auto it3 = boundingBox.kptMatches.begin(); it3 != boundingBox.kptMatches.end(); it3++)
+
+What it does: Only retains matches whose distance is less than or equal to the mean, removing keypoint matches that are likely outliers. The filtered matches replace the original boundingBox.kptMatches.
+
+Summary:
+This function robustly associates keypoints with a bounding box while eliminating matches with high descriptor distance, improving the quality of keypoint-based tracking. The entire computation is implemented in the clusterKptMatchesWithROI function.
+
+FP.4)TTC Computation from Camera
+
+The computeTTCCamera function calculates the Time-to-Collision (TTC) using keypoint correspondences between successive camera images.
+
+Steps and implementation:
+
+1)Iterate over all keypoint match pairs
+
+Where: Nested loops over kptMatches (it1 and it2)
+
+What it does: For each pair of matched keypoints in the current and previous frames, retrieves the corresponding keypoints (kpOuterCurr, kpOuterPrev, kpInnerCurr, kpInnerPrev).
+
+2)Compute distance ratios
+
+Where: distCurr = cv::norm(...), distPrev = cv::norm(...)
+
+What it does: Calculates the distance between keypoints in the current frame (distCurr) and previous frame (distPrev), then computes the distance ratio distCurr / distPrev if distPrev is nonzero and distCurr exceeds a minimum threshold (minDist = 100). These ratios are stored in distRatios.
+
+3)Handle empty distance ratios
+
+Where: if (distRatios.size() == 0)
+
+What it does: If no valid distance ratios are found, TTC cannot be computed, so it is set to NaN.
+
+4)Compute median distance ratio
+
+Where: Sorting distRatios and selecting the median
+
+What it does: Uses the median of distance ratios instead of the mean to reduce the effect of outliers, resulting in a robust estimate.
+
+5)Compute camera-based TTC
+
+Where: TTC = -dT / (1 - medDistRatio)
+
+What it does: Uses the median distance ratio and frame time dT = 1 / frameRate to calculate TTC under the assumption of constant velocity.
+
+Summary:
+This function provides a robust TTC estimate from camera keypoints by considering distance changes between matched points, filtering out unreliable pairs, and using the median ratio to reduce noise. The computation is fully implemented in the computeTTCCamera function.
 
 FP.5)Performance Evaluation based on lIdar BASED TTC Computation
 While evaluating Lidar based TTC estimations, several frames were identified where the computed TTC  deviates significantly from a manually estimated TTC derived from  the nearest LiDAR point in top-view. The manual estimation was based on reduction in observed distance between consecutive frames and serves asd a physical reference. Three such frames are discussed below .
