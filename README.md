@@ -184,6 +184,4 @@ Also just like in case of TTC estimation using LiDAR , we can see discrepancies 
 
 1)Approximated TTC Computation using Constant Velocity Model.
 
-2)Inefficent Keypoint Matching 
-
 3)Image noise , motion blurr and lighting changes
