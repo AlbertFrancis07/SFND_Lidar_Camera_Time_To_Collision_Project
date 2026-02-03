@@ -1,5 +1,46 @@
 # SFND_Lidar_Camera_TTC_Estimation_FINAL_Project-Report
 
+FP.1)
+Bounding Box Matching
+
+The matchBoundingBoxes function establishes correspondences between bounding boxes in consecutive frames based on keypoint matches.
+
+Steps and implementation:
+
+Iterate over keypoint matches
+
+Where: for(auto it1=matches.begin(); it1!=matches.end(); it1++)
+
+What it does: For each matched keypoint between the previous (prevFrame) and current (currFrame) frames, the function retrieves the corresponding cv::KeyPoint objects (keyprev and keycurr).
+
+Associate keypoints with bounding boxes
+
+Where: Nested loops over prevFrame.boundingBoxes (it2) and currFrame.boundingBoxes (it3)
+
+What it does: Checks if the keypoints fall within the ROI of any bounding box. If so, it records the pair of bounding box IDs in a multimap bbmatches.
+
+Count the number of keypoint matches per bounding box pair
+
+Where: for(auto it4=prevFrame.boundingBoxes.begin(); it4!=prevFrame.boundingBoxes.end(); it4++)
+
+What it does: For each bounding box in the previous frame, counts how many keypoints matched with each bounding box in the current frame using currcount.
+
+Select the best-matching bounding box
+
+Where: Loop over currcount inside the previous loop
+
+What it does: Determines the bounding box in the current frame that has the highest number of matched keypoints. This bounding box is considered the best match for the given previous-frame bounding box.
+
+Store the best matches
+
+Where: bbBestMatches[it4->boxID] = bestmatchboxID
+
+What it does: Saves the correspondence between previous and current frame bounding boxes in the bbBestMatches map.
+
+Summary:
+This function ensures that each bounding box in the previous frame is associated with the most likely corresponding bounding box in the current frame based on keypoint overlap. It is implemented fully in matchBoundingBoxes.cpp in the matchBoundingBoxes function.
+
+
 FP.5)Performance Evaluation based on lIdar BASED TTC Computation
 While evaluating Lidar based TTC estimations, several frames were identified where the computed TTC  deviates significantly from a manually estimated TTC derived from  the nearest LiDAR point in top-view. The manual estimation was based on reduction in observed distance between consecutive frames and serves asd a physical reference. Three such frames are discussed below .
     
@@ -17,6 +58,8 @@ The observed discrepancies can be attributed to to several factors which include
         ii)Distance calculation Strategy: The TTC algorithm relys on Median distance of LiDAR points within the bounding box to make it robust against outliers. If only a few points are close to the rear of the vehicle and all other points are lying farrzther away then the median distance will also be larger than true distance , resulting in artificially increased TTC.
 
 
-FP.6) A comparison of different detector–descriptor combinations shows significant differences in the stability of the camera-based TTC estimation. While methods such as FAST+BRIEF and FAST+SIFT exhibit large frame-to-frame fluctuations and occasional extreme TTC values, FAST+ORB produce smoother TTC trajectories
+FP.6) A comparison of different detector–descriptor combinations shows significant differences in the stability of the camera-based TTC estimation. While methods such as FAST+BRIEF and FAST+SIFT exhibit large frame-to-frame fluctuations and occasional extreme TTC values ( higher standard deviation), FAST+ORB produce smoother TTC trajectories
 
 ![alt text](image.png)
+
+Also 
