@@ -6,27 +6,39 @@ The matchBoundingBoxes function establishes correspondences between bounding box
 Steps and implementation:
 
 1)Iterate over keypoint matches
+
 Where: for(auto it1=matches.begin(); it1!=matches.end(); it1++)
+
 What it does: For each matched keypoint between the previous (prevFrame) and current (currFrame) frames, the function retrieves the corresponding cv::KeyPoint objects (keyprev and keycurr).
 
 2)Associate keypoints with bounding boxes
+
 Where: Nested loops over prevFrame.boundingBoxes (it2) and currFrame.boundingBoxes (it3)
+
 What it does: Checks if the keypoints fall within the ROI of any bounding box. If so, it records the pair of bounding box IDs in a multimap bbmatches.
 
 3)Count the number of keypoint matches per bounding box pair
+
 Where: for(auto it4=prevFrame.boundingBoxes.begin(); it4!=prevFrame.boundingBoxes.end(); it4++)
+
 What it does: For each bounding box in the previous frame, counts how many keypoints matched with each bounding box in the current frame using currcount.
 
 4)Select the best-matching bounding box
+
 Where: Loop over currcount inside the previous loop
+
 What it does: Determines the bounding box in the current frame that has the highest number of matched keypoints. This bounding box is considered the best match for the given previous-frame bounding box.
 
 5)Store the best matches
+
 Where: bbBestMatches[it4->boxID] = bestmatchboxID
+
 What it does: Saves the correspondence between previous and current frame bounding boxes in the bbBestMatches map.
 
 Summary:
 This function ensures that each bounding box in the previous frame is associated with the most likely corresponding bounding box in the current frame based on keypoint overlap. It is implemented fully in matchBoundingBoxes.cpp in the matchBoundingBoxes function.
+
+
 
 
 
