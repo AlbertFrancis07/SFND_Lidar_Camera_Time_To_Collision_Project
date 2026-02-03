@@ -17,4 +17,6 @@ The observed discrepancies can be attributed to to several factors which include
         ii)Distance calculation Strategy: The TTC algorithm relys on Median distance of LiDAR points within the bounding box to make it robust against outliers. If only a few points are close to the rear of the vehicle and all other points are lying farrzther away then the median distance will also be larger than true distance , resulting in artificially increased TTC.
 
 
-FP.6)
+FP.6) A comparison of different detector–descriptor combinations shows significant differences in the stability of the camera-based TTC estimation. While methods such as FAST+BRIEF and FAST+SIFT exhibit large frame-to-frame fluctuations and occasional extreme TTC values, FAST+ORB produce smoother TTC trajectories
+
+![alt text](image.png)
