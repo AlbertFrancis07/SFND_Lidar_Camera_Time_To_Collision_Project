@@ -165,7 +165,7 @@ While evaluating Lidar based TTC estimations, several frames were identified whe
 
 **2)Frame 7 :** The computed TTC was around 12s but the manual esitmated TTC was observed to be around 25 seconds. However, inspection of the top-view LiDAR data shows that the distance to the nearest LiDAR point has in fact decreased compared to the previous frame. This inconsistency indicates that the TTC estimation does not accurately reflect the actual relative motion in this frame.
 
-**3)Frame 12 :** The computed TTC was around 9 sec but the manually estimated TTC was observed to be negative in sign which indicate a increase in distance between ego vehicle and the predding vehicle. This result contradicts the observed top-view LiDAR measurements, which show a continued reduction in distance to the nearest point on the preceding vehicle. This further highlights the instability of the TTC estimation in certain frames.
+**3)Frame 12 :** The computed TTC was around 9 sec but the manually estimated TTC was observed to be negative in sign which indicate a increase in distance between ego vehicle and the preceding vehicle. This result contradicts the observed top-view LiDAR measurements, which show a continued reduction in distance to the nearest point on the preceding vehicle. This further highlights the instability of the TTC estimation in certain frames.
 
 The observed discrepancies can be attributed to to several factors which include the following:-
 
@@ -180,4 +180,10 @@ A comparison of different detector–descriptor combinations shows significant d
 
 ![alt text](image.png)
 
-Also 
+Also just like in case of TTC estimation using LiDAR , we can see discrepancies such as sudden increase in TTC value etc ( example Frame 5). This can again be attributed to several factors as listed bellow
+
+1)Approximated TTC Computation using Constant Velocity Model.
+
+2)Inefficent Keypoint Matching 
+
+3)Image noise , motion blurr and lighting changes
