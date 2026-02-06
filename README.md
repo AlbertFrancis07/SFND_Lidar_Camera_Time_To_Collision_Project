@@ -118,13 +118,20 @@ double mean = sum / distances.size();
 **Where:**
 
 for(auto it3 = boundingBox.kptMatches.begin(); it3 != boundingBox.kptMatches.end(); it3++)
+
 {
+
     const auto &kptprev = kptsPrev[it3->queryIdx];
+
     const auto &kptcurr = kptsCurr[it3->trainIdx];
+
     double dist = sqrt((kptcurr.pt.x - kptprev.pt.x)*(kptcurr.pt.x - kptprev.pt.x) +
                        (kptcurr.pt.y - kptprev.pt.y)*(kptcurr.pt.y - kptprev.pt.y));
+
     if(dist <= mean) filteredmatches.push_back(*it3);
+
 }
+
 boundingBox.kptMatches = filteredmatches;
 
 
