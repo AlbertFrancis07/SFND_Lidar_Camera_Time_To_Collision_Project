@@ -81,7 +81,7 @@ This function provides a robust TTC estimate by focusing on points in the ego la
 
 **FP.3)Keypoint Association with Bounding Box**
 
-The clusterKptMatchesWithROI function associates a given bounding box with the keypoint matches that lie inside it, and filters out outliers based on descriptor distance.
+The clusterKptMatchesWithROI function associates a given bounding box with the keypoint matches that lie inside it, and filters out outliers based on euclidean distance.
 
 **Steps and implementation:**
 
