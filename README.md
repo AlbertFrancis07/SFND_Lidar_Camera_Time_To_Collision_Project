@@ -178,7 +178,15 @@ The observed discrepancies can be attributed to to several factors which include
 
 A comparison of different detector–descriptor combinations shows significant differences in the stability of the camera-based TTC estimation. While methods such as FAST+BRIEF and FAST+SIFT exhibit large frame-to-frame fluctuations and occasional extreme TTC values ( higher standard deviation), FAST+ORB produce smoother TTC trajectories
 
-![alt text](image.png)
+![alt text](image-1.png)
+
+![alt text](image-2.png)
+
+![alt text](image-3.png)
+
+![alt text](image-4.png)
+
+![alt text](image-5.png)
 
 Also just like in case of TTC estimation using LiDAR , we can see discrepancies such as sudden increase in TTC value etc ( example Frame 5). This can again be attributed to several factors as listed bellow
 
