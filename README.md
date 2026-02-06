@@ -188,8 +188,10 @@ A comparison of different detector–descriptor combinations shows significant d
 
 ![alt text](image-5.png)
 
-Also just like in case of TTC estimation using LiDAR , we can see discrepancies such as sudden increase in TTC value etc ( example Frame 5). This can again be attributed to several factors as listed bellow
+From the observations we can conclude that various combinations of Decriptors with SIFT, AKAZE or SHITOMASI Detectors gives the best performinfg results in terms of matching reliability. Whereas for real time tasks where speed is a major concern FAST Detector seems to be a good choice  even though performance is slightly reduced, as indicated by a slightly larger standard deviation in TTC estimates.
 
-1)Approximated TTC Computation using Constant Velocity Model.
+Similar to TTC estimation using LiDAR, camera-based TTC measurements can exhibit sudden spikes or abrupt variations in the estimated values. Such discrepancies arise from multiple factors, including:
 
-2)Image noise , motion blurr and lighting changes
+Approximation errors in the constant velocity model, which fail to account for rapid accelerations or decelerations of tracked objects, leading to temporal estimation errors.
+
+Propagation of keypoint localization and tracking errors, caused by image noise, motion blur, and varying illumination conditions, which reduce the reliability of frame-to-frame correspondences and introduce instability in TTC computation.
