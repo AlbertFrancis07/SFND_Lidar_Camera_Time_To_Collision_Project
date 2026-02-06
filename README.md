@@ -95,7 +95,7 @@ The clusterKptMatchesWithROI function associates a given bounding box with the k
 
 **Where:** if(boundingBox.roi.contains(kptprev.pt) && boundingBox.roi.contains(kptcurr.pt))
 
-**What it does:** Only matches where both keypoints are inside the bounding box ROI are considered valid. These matches are added to boundingBox.kptMatches, and their descriptor distances are stored in distances.
+**What it does:** Only matches where both keypoints are inside the bounding box ROI are considered valid. These matches are added to boundingBox.kptMatches, and the Euclidean distance between previous and current keypoints is stored in the distances vector.
 
 **3)Handle empty matches**
 
@@ -103,20 +103,35 @@ The clusterKptMatchesWithROI function associates a given bounding box with the k
 
 **What it does:** If no keypoints were found inside the bounding box, the function exits early.
 
-**4)Compute mean descriptor distance**
+**4)Compute mean Euclidean distance**
 
-**Where:** Sum all values in distances and divide by distances.size()
+**Where:**
 
-**What it does:** Calculates the average descriptor distance of the matches to identify potential outliers.
+double sum = 0.0;
+for(auto it2 : distances) sum += it2;
+double mean = sum / distances.size();
+
+**What it does:** Calculates the mean Euclidean distance of all matches inside the bounding box. This is used to filter out outlier matches.
 
 **5)Filter matches by distance**
 
-**Where:** for(auto it3 = boundingBox.kptMatches.begin(); it3 != boundingBox.kptMatches.end(); it3++)
+**Where:**
 
-**What it does:** Only retains matches whose distance is less than or equal to the mean, removing keypoint matches that are likely outliers. The filtered matches replace the original boundingBox.kptMatches.
+for(auto it3 = boundingBox.kptMatches.begin(); it3 != boundingBox.kptMatches.end(); it3++)
+{
+    const auto &kptprev = kptsPrev[it3->queryIdx];
+    const auto &kptcurr = kptsCurr[it3->trainIdx];
+    double dist = sqrt((kptcurr.pt.x - kptprev.pt.x)*(kptcurr.pt.x - kptprev.pt.x) +
+                       (kptcurr.pt.y - kptprev.pt.y)*(kptcurr.pt.y - kptprev.pt.y));
+    if(dist <= mean) filteredmatches.push_back(*it3);
+}
+boundingBox.kptMatches = filteredmatches;
+
+
+**What it does:** Retains only matches whose Euclidean distance is less than or equal to the mean. Outlier keypoints are removed, and the filtered matches replace the original boundingBox.kptMatches
 
 **Summary:**
-This function robustly associates keypoints with a bounding box while eliminating matches with high descriptor distance, improving the quality of keypoint-based tracking. The entire computation is implemented in the clusterKptMatchesWithROI function.
+This function robustly associates keypoints with a bounding box while eliminating matches with high euclidean distances, improving the quality of keypoint-based tracking. The entire computation is implemented in the clusterKptMatchesWithROI function.
 
 **FP.4)TTC Computation from Camera**
 
@@ -176,7 +191,7 @@ The observed discrepancies can be attributed to to several factors which include
 
 **FP.6)PERFORMANCE EVALUATION-CAMERA**
 
-A comparison of different detector–descriptor combinations shows significant differences in the stability of the camera-based TTC estimation. While methods such as FAST+BRIEF and FAST+SIFT exhibit large frame-to-frame fluctuations and occasional extreme TTC values ( higher standard deviation), FAST+ORB produce smoother TTC trajectories
+A comparison of different detector–descriptor combinations shows significant differences in the stability of the camera-based TTC estimation.
 
 ![alt text](image-1.png)
 
@@ -184,11 +199,11 @@ A comparison of different detector–descriptor combinations shows significant d
 
 ![alt text](image-3.png)
 
-![alt text](image-4.png)
+![alt text](image-6.png)
 
 ![alt text](image-5.png)
 
-From the observations we can conclude that various combinations of Decriptors with SIFT, AKAZE or SHITOMASI Detectors gives the best performinfg results in terms of matching reliability. Whereas for real time tasks where speed is a major concern FAST Detector seems to be a good choice  even though performance is slightly reduced, as indicated by a slightly larger standard deviation in TTC estimates.
+From the observations we can conclude that various combinations of Decriptors with SIFT, or AKAZE  Detectors gives the best performinfg results in terms of matching reliability. Whereas for real time tasks where speed is a major concern FAST Detector seems to be a good choice  even though performance is slightly reduced, as indicated by a slightly larger standard deviation in TTC estimates.
 
 Similar to TTC estimation using LiDAR, camera-based TTC measurements can exhibit sudden spikes or abrupt variations in the estimated values. Such discrepancies arise from multiple factors, including:
 
