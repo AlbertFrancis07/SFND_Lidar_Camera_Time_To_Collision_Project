@@ -140,7 +140,7 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
 // associate a given bounding box with the keypoints it contains
 void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint> &kptsPrev, std::vector<cv::KeyPoint> &kptsCurr, std::vector<cv::DMatch> &kptMatches)
 {
-
+    boundingBox.kptMatches.clear();
     std::vector<double>distances;
     for(auto it1 = kptMatches.begin(); it1!=kptMatches.end();it1++)
     {
@@ -151,32 +151,42 @@ void clusterKptMatchesWithROI(BoundingBox &boundingBox, std::vector<cv::KeyPoint
         
         if(boundingBox.roi.contains(kptprev.pt) && boundingBox.roi.contains(kptcurr.pt))
         {
-            boundingBox.kptMatches.push_back(*it1);
-            distances.push_back(it1->distance);
+             boundingBox.kptMatches.push_back(*it1);
+            // distances.push_back(it1->distance);
+            distances.push_back(sqrt((((kptcurr.pt.x)-(kptprev.pt.x))*((kptcurr.pt.x)-(kptprev.pt.x)))+(((kptcurr.pt.y)-(kptprev.pt.y))*((kptcurr.pt.y)-(kptprev.pt.y)))));
         }
 
     }
-        if(distances.empty())
-        {
-            return;
-        }
-        double sum = 0.0;
-        double mean = 0.0;
-        for( auto it2 : distances)
-        {
-            sum+=(it2);
-        }
-        mean = sum/distances.size();
-        
-        std::vector<cv::DMatch>filteredmatches;
-        for(auto it3 = boundingBox.kptMatches.begin(); it3!=boundingBox.kptMatches.end();it3++)
-        {
-            if(it3->distance<=mean)
+
+    if(distances.empty())
+    {
+        return;
+    }
+    double sum = 0.0;
+    double mean = 0.0;
+
+    for( auto it2 : distances)
+    {
+        sum+=(it2);
+    }
+    mean = sum/distances.size();
+         
+    std::vector<cv::DMatch>filteredmatches;
+
+    for(auto it3 = boundingBox.kptMatches.begin(); it3!=boundingBox.kptMatches.end();it3++)
+    {
+            const auto &kptprev = kptsPrev[it3->queryIdx];
+            const auto &kptcurr = kptsCurr[it3->trainIdx];
+            double dist =0.0;
+            dist=sqrt((((kptcurr.pt.x)-(kptprev.pt.x))*((kptcurr.pt.x)-(kptprev.pt.x)))+(((kptcurr.pt.y)-(kptprev.pt.y))*((kptcurr.pt.y)-(kptprev.pt.y))));
+
+            if(dist<=mean)
             {
-                filteredmatches.push_back(*it3);
+                 filteredmatches.push_back(*it3);
             }
-        }
-        boundingBox.kptMatches=filteredmatches;
+    }
+
+    boundingBox.kptMatches=filteredmatches;
     
     
 }
